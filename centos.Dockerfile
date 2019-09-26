@@ -12,7 +12,7 @@ RUN yum-config-manager -y --add-repo https://download.docker.com/linux/centos/do
 
 RUN yum update -y
 
-RUN yum install -y docker-ce
+RUN yum install -y docker-ce-18.06.2.ce
 
 RUN systemctl enable docker
 
@@ -37,17 +37,19 @@ RUN exec bash && setenforce 0 && sed -i --follow-symlinks 's/SELINUX=enforcing/S
 
 # Install Kubernetes
 
+RUN exec bash && update-alternatives --set iptables /usr/sbin/iptables-legacy
+
+RUN exec bash && swapoff -a
+
 ADD repo/kubernetes.repo /etc/yum.repos.d/
 
-RUN yum update -y && yum install -y kubelet kubeadm kubectl && yum clean all
+RUN exec bash && setenforce 0
 
-ADD setup/kubelet /etc/default/kubelet
+RUN exec bash && sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 
-RUN systemctl enable kubelet
+RUN yum update -y && yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
 
-RUN exec bash && systemctl enable kubelet &&  systemctl start kubelet
-
-RUN exec bash && update-alternatives --set iptables /usr/sbin/iptables-legacy
+RUN exec bash && systemctl enable --now kubelet
 
 ADD setup/k8s.conf /etc/sysctl.d/
 
@@ -55,16 +57,6 @@ RUN exec bash && sysctl --system
 
 RUN exec bash && modprobe br_netfilter
 
-RUN exec bash && echo '1' > /proc/sys/net/bridge/bridge-nf-call-iptables
+ADD setup/kubelet /etc/default/kubelet
 
 RUN exec bash && systemctl daemon-reload && systemctl restart kubelet
-
-# ADD repo/kubernetes.repo /etc/yum.repos.d/
-
-# RUN yum update -y && yum install -y kubelet kubeadm kubectl && yum clean all
-
-# RUN systemctl enable kubelet
-
-# RUN exec bash && systemctl enable kubelet &&  systemctl start kubelet
-
-# RUN update-alternatives --set iptables /usr/sbin/iptables-legacy
