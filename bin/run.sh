@@ -1,0 +1,1 @@
+docker run --privileged -d --name k8s-docker k8s-docker
