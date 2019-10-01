@@ -1,1 +1,1 @@
-docker run --privileged -d --name k8s-docker k8s-docker
+docker run --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:ro -d --name k8s-docker k8s-docker
